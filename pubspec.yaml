@@ -13,9 +13,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.1
-  http: ^0.13.0
+  http: ^1.2.1
   stream_transform: ^2.0.0
   cupertino_icons: ^1.0.6
+  background_downloader: ^8.4.3
 
 
 dev_dependencies:
