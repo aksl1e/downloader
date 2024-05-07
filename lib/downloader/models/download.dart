@@ -4,7 +4,7 @@ final class Download extends Equatable {
   const Download({required this.id, required this.url, required this.fileName});
 
   final int id;
-  final Uri url;
+  final String url;
   final String fileName;
 
   @override
