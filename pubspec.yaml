@@ -17,6 +17,7 @@ dependencies:
   stream_transform: ^2.0.0
   cupertino_icons: ^1.0.6
   background_downloader: ^8.4.3
+  animated_text_kit: ^4.2.2
 
 
 dev_dependencies:
