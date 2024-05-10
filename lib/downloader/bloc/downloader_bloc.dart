@@ -4,6 +4,7 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../models/models.dart';
 
@@ -56,13 +57,14 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
 
   FutureOr<void> _onDownloadStarted(DownloadStarted event, Emitter<DownloaderState> emit) async {
     print(state.url);
+    var downloadsDirectory = await getDownloadsDirectory();
 
     emit(state.copyWith(
       status: DownloadStatus.downloading,
       download: Download(
         downloadTask: DownloadTask(
           url: state.url,
-          directory: 'C:/Users/aksl1e/Downloads',
+          directory: downloadsDirectory!.path, // TODO - MAKE A FOLDER SELECTION!
           filename: basename(state.url),
           updates: Updates.statusAndProgress,
           allowPause: true,
