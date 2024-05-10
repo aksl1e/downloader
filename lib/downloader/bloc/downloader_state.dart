@@ -27,6 +27,6 @@ final class DownloaderState extends Equatable {
   }
 
   @override
-  List<Object> get props => [status, download];
+  List<Object> get props => [status, url, download];
 }
 

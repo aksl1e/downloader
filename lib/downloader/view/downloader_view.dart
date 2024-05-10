@@ -1,11 +1,19 @@
 import 'package:downloader/downloader/widgets/AnimatedDownloadingText.dart';
 import 'package:downloader/downloader/widgets/StatusRow.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/downloader_bloc.dart';
 
 class DownloaderView extends StatelessWidget {
-  const DownloaderView({super.key});
+  const DownloaderView({
+    this.downloadingKey = const Key('downloadingKey'),
+    this.pausedKey = const Key('pausedKey'),
+    super.key
+  });
+
+  final Key downloadingKey;
+  final Key pausedKey;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +55,7 @@ class DownloaderView extends StatelessWidget {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  AnimatedDownloadingText(),
+                  AnimatedDownloadingText('Downloading...', downloadingKey),
                   StatusRow(
                     context.read<DownloaderBloc>().state.download.progress,
                     context.read<DownloaderBloc>().state.download.timeRemainingAsString,
@@ -64,21 +72,59 @@ class DownloaderView extends StatelessWidget {
                           Icons.pause
                         ),
                         onPressed: () =>
-                          context.read<DownloaderBloc>().add(DownloadPaused()),
+                          context.read<DownloaderBloc>().add(DownloadPauseSubmitted()),
+                      ),
+                      FloatingActionButton(
+                        child: Icon(
+                            Icons.cancel
+                        ),
+                        onPressed: () =>
+                            context.read<DownloaderBloc>().add(DownloadCancelSubmitted()),
                       )
                     ],
                   )
                 ]
               );
             case DownloadStatus.completed:
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Download has completed!'))
-              );
-              return const SizedBox();
+             WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 SnackBar(content: Text('Download has completed!'))
+               );
+             });
+             return const SizedBox();
             case DownloadStatus.canceled:
-              return Text('Unspecified Error occurred!');
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Download has been canceled!'))
+                );
+              });
+              return const SizedBox();
             case DownloadStatus.paused:
-              return Text('Unspecified Error occurred!');
+              return Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    AnimatedDownloadingText('Paused...', pausedKey),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        FloatingActionButton(
+                          child: Icon(
+                              Icons.play_circle
+                          ),
+                          onPressed: () =>
+                              context.read<DownloaderBloc>().add(DownloadResumed()),
+                        ),
+                        FloatingActionButton(
+                          child: Icon(
+                              Icons.cancel
+                          ),
+                          onPressed: () =>
+                              context.read<DownloaderBloc>().add(DownloadCancelSubmitted()),
+                        )
+                      ],
+                    )
+                  ]
+              );
             default:
               return Text('Unspecified Error occurred!');
           }

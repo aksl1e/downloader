@@ -16,6 +16,7 @@ final class DownloadLinkChanged extends DownloaderEvent {
 }
 
 final class DownloadStarted extends DownloaderEvent {}
+final class DownloadCompleted extends DownloaderEvent {}
 final class DownloadProgressed extends DownloaderEvent {
   const DownloadProgressed(this.progress, this.timeRemainingAsString);
 
@@ -25,6 +26,7 @@ final class DownloadProgressed extends DownloaderEvent {
   @override
   List<Object> get props => [progress, timeRemainingAsString];
 }
+final class DownloadPauseSubmitted extends DownloaderEvent {}
 final class DownloadPaused extends DownloaderEvent {}
 final class DownloadCancelSubmitted extends DownloaderEvent {}
 final class DownloadCanceled extends DownloaderEvent {}

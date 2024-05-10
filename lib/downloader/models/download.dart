@@ -1,32 +1,29 @@
+import 'package:background_downloader/background_downloader.dart';
 import 'package:equatable/equatable.dart';
 
 final class Download extends Equatable {
   const Download({
-    this.id = '',
-    this.url = '',
+    this.downloadTask = null,
     this.progress = 0,
     this.timeRemainingAsString = '',
   });
 
-  final String id;
-  final String url;
+  final DownloadTask? downloadTask;
   final double progress;
   final String timeRemainingAsString;
 
-  Download copyWith(
-    String? id,
-    String? url,
+  Download copyWith({
+    DownloadTask? downloadTask,
     double? progress,
     String? timeRemainingAsString
-  ) {
+  }) {
     return Download(
-      id: id ?? this.id,
-      url: url ?? this.url,
+      downloadTask: downloadTask ?? this.downloadTask,
       progress: progress ?? this.progress,
       timeRemainingAsString: timeRemainingAsString ?? this.timeRemainingAsString,
     );
   }
 
   @override
-  List<Object> get props => [id, url, progress, timeRemainingAsString];
+  List<Object> get props => [progress, timeRemainingAsString];
 }

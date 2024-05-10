@@ -19,8 +19,10 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
     on<DownloadProgressed>(_onDownloadProgressed);
     on<DownloadCancelSubmitted>(_onDownloadCancelSubmitted);
     on<DownloadCanceled>(_onDownloadCanceled);
+    on<DownloadPauseSubmitted>(_onDownloadPauseSubmitted);
     on<DownloadPaused>(_onDownloadPaused);
     on<DownloadResumed>(_onDownloadResumed);
+    on<DownloadCompleted>(_onDownloadCompleted);
   }
 
   void _specifyDownloadListener() {
@@ -29,103 +31,110 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
         case TaskStatusUpdate():
           switch (update.status) {
             case TaskStatus.complete:
-              print('Task ${update.task.taskId} success!');
+              add(DownloadCompleted());
+              print("complete");
 
             case TaskStatus.paused:
               add(DownloadPaused());
+              print("pause");
 
             case TaskStatus.canceled:
               add(DownloadCanceled());
-
+              print("canceled");
+            case TaskStatus.failed:
+              print('failed');
             default:
-              print('Download not successful');
+              print('Default');
           }
 
         case TaskProgressUpdate():
           add(DownloadProgressed(update.progress, update.timeRemainingAsString));
+          print("progressed");
       }
     });
   }
 
   FutureOr<void> _onDownloadStarted(DownloadStarted event, Emitter<DownloaderState> emit) async {
-    var downloadTask = DownloadTask(
-      url: state.url,
-      directory: 'C:/Users/aksl1e/Downloads',
-      filename: basename(state.download.url),
-      updates: Updates.statusAndProgress,
-      allowPause: true,
-    );
-
-    await FileDownloader().enqueue(downloadTask);
+    print(state.url);
 
     emit(state.copyWith(
       status: DownloadStatus.downloading,
       download: Download(
-        id: downloadTask.taskId,
-        url: state.url,
+        downloadTask: DownloadTask(
+          url: state.url,
+          directory: 'C:/Users/aksl1e/Downloads',
+          filename: basename(state.url),
+          updates: Updates.statusAndProgress,
+          allowPause: true,
+        ),
       ),
     ));
+
+    await FileDownloader().enqueue(state.download.downloadTask!);
   }
 
   FutureOr<void> _onDownloadLinkChanged(DownloadLinkChanged event, Emitter<DownloaderState> emit) {
     emit(state.copyWith(
       url: event.url,
     ));
+    print('changed! ${state.url}');
   }
 
   FutureOr<void> _onDownloadProgressed(DownloadProgressed event, Emitter<DownloaderState> emit) {
+    if(state.status != DownloadStatus.paused)
     emit(state.copyWith(
-      download: Download(
+      download: state.download.copyWith(
         progress: event.progress,
         timeRemainingAsString: event.timeRemainingAsString,
       ),
     ));
   }
 
-  FutureOr<void> _onDownloadCancelSubmitted(DownloadCancelSubmitted event, Emitter<DownloaderState> emit) async {
-    await FileDownloader().cancelTaskWithId(state.download.id);
-    
+  FutureOr<void> _onDownloadCancelSubmitted(DownloadCancelSubmitted event, Emitter<DownloaderState> emit) {
     emit(state.copyWith(
       status: DownloadStatus.canceled,
     ));
+
+    FileDownloader().cancelTaskWithId(state.download.downloadTask!.taskId);
   }
 
   FutureOr<void> _onDownloadCanceled(DownloadCanceled event, Emitter<DownloaderState> emit) {
     emit(state.copyWith(
       status: DownloadStatus.initial,
+      url: '',
       download: Download(),
     ));
   }
 
-  FutureOr<void> _onDownloadPaused(DownloadPaused event, Emitter<DownloaderState> emit) async {
-    await FileDownloader().pause(DownloadTask(
-      url: state.download.url,
-      directory: 'C:/Users/aksl1e/Downloads',
-      filename: basename(state.download.url),
-      updates: Updates.statusAndProgress,
-      allowPause: true,
-      taskId: state.download.id
-    ));
+  FutureOr<void> _onDownloadPauseSubmitted(DownloadPauseSubmitted event, Emitter<DownloaderState> emit) async {
+    await FileDownloader().pause(state.download.downloadTask!);
+  }
 
+  FutureOr<void> _onDownloadPaused(DownloadPaused event, Emitter<DownloaderState> emit) {
     emit(state.copyWith(
       status: DownloadStatus.paused,
     ));
   }
 
   FutureOr<void> _onDownloadResumed(DownloadResumed event, Emitter<DownloaderState> emit) async {
-    await FileDownloader().resume(DownloadTask(
-        url: state.download.url,
-        directory: 'C:/Users/aksl1e/Downloads',
-        filename: basename(state.download.url),
-        updates: Updates.statusAndProgress,
-        allowPause: true,
-        taskId: state.download.id
-    ));
+    await FileDownloader().resume(state.download.downloadTask!);
 
     emit(state.copyWith(
       status: DownloadStatus.downloading,
     ));
   }
 
-
+  FutureOr<void> _onDownloadCompleted(DownloadCompleted event, Emitter<DownloaderState> emit) async {
+    emit(state.copyWith(
+      status: DownloadStatus.completed,
+      url: '',
+      download: Download(),
+    ));
+    await Future.delayed(Duration(milliseconds: 10));
+    emit(state.copyWith(
+      status: DownloadStatus.initial,
+      url: '',
+      download: Download(),
+    ));
+  }
 }
