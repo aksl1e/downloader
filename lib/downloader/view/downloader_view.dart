@@ -1,6 +1,5 @@
 import 'package:downloader/downloader/widgets/AnimatedDownloadingText.dart';
 import 'package:downloader/downloader/widgets/StatusRow.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/downloader_bloc.dart';
@@ -21,7 +20,6 @@ class DownloaderView extends StatelessWidget {
       alignment: Alignment.center,
       padding: EdgeInsets.fromLTRB(150, 100, 150, 100),
       child: BlocBuilder<DownloaderBloc, DownloaderState>(
-        buildWhen: (prev, state) => prev.status != state.status,
         builder: (context, state) {
           switch (state.status) {
             case DownloadStatus.initial:
@@ -38,10 +36,28 @@ class DownloaderView extends StatelessWidget {
                         .add(DownloadLinkChanged(text)),
                   ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Destination Path: ${context.read<DownloaderBloc>().state.destFolder}',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      FloatingActionButton.extended(
+                        label: Text('Select'),
+                        icon: Icon(
+                          Icons.folder
+                        ),
+                        onPressed: () =>
+                          context.read<DownloaderBloc>().add(DownloadFolderSelectClicked()),
+                      )
+                    ],
+                  ),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      FloatingActionButton(
-                        child: Icon(
+                      FloatingActionButton.extended(
+                        label: Text('Download'),
+                        icon: Icon(
                           Icons.download
                         ),
                         onPressed: () =>
@@ -96,6 +112,17 @@ class DownloaderView extends StatelessWidget {
               WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Download has been canceled!'))
+                );
+              });
+              return const SizedBox();
+            case DownloadStatus.failed:
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Download has failed! - ${context.read<DownloaderBloc>().state.message}'),
+                      showCloseIcon: true,
+                      duration: Duration(seconds: 15),
+                    )
                 );
               });
               return const SizedBox();

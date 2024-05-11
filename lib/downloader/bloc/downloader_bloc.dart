@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -17,6 +18,8 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
 
     on<DownloadStarted>(_onDownloadStarted);
     on<DownloadLinkChanged>(_onDownloadLinkChanged);
+    on<DownloadFolderChanged>(_onDownloadFolderChanged);
+    on<DownloadFolderSelectClicked>(_onDownloadFolderSelectClicked);
     on<DownloadProgressed>(_onDownloadProgressed);
     on<DownloadCancelSubmitted>(_onDownloadCancelSubmitted);
     on<DownloadCanceled>(_onDownloadCanceled);
@@ -24,6 +27,9 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
     on<DownloadPaused>(_onDownloadPaused);
     on<DownloadResumed>(_onDownloadResumed);
     on<DownloadCompleted>(_onDownloadCompleted);
+    on<DownloadFailed>(_onDownloadFailed);
+
+    _putDownloadDirInState();
   }
 
   void _specifyDownloadListener() {
@@ -43,7 +49,7 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
               add(DownloadCanceled());
               print("canceled");
             case TaskStatus.failed:
-              print('failed');
+              add(DownloadFailed(update.exception!.description));
             default:
               print('Default');
           }
@@ -55,16 +61,19 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
     });
   }
 
+  void _putDownloadDirInState() async {
+    var downloadDir = await getDownloadsDirectory();
+    add(DownloadFolderChanged(downloadDir!.path));
+  }
+
   FutureOr<void> _onDownloadStarted(DownloadStarted event, Emitter<DownloaderState> emit) async {
     print(state.url);
-    var downloadsDirectory = await getDownloadsDirectory();
-
     emit(state.copyWith(
       status: DownloadStatus.downloading,
       download: Download(
         downloadTask: DownloadTask(
           url: state.url,
-          directory: downloadsDirectory!.path, // TODO - MAKE A FOLDER SELECTION!
+          directory: state.destFolder,
           filename: basename(state.url),
           updates: Updates.statusAndProgress,
           allowPause: true,
@@ -79,7 +88,26 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
     emit(state.copyWith(
       url: event.url,
     ));
-    print('changed! ${state.url}');
+  }
+
+  FutureOr<void> _onDownloadFolderChanged(DownloadFolderChanged event, Emitter<DownloaderState> emit) {
+    emit(state.copyWith(
+      destFolder: event.folderPath,
+    ));
+  }
+
+  FutureOr<void> _onDownloadFolderSelectClicked(DownloadFolderSelectClicked event, Emitter<DownloaderState> emit) async {
+    String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+      lockParentWindow: true,
+      initialDirectory: state.destFolder,
+      dialogTitle: 'Select Destination Folder'
+    );
+
+    if(selectedDirectory != null){
+        emit(state.copyWith(
+        destFolder: selectedDirectory,
+      ));
+    }
   }
 
   FutureOr<void> _onDownloadProgressed(DownloadProgressed event, Emitter<DownloaderState> emit) {
@@ -96,7 +124,6 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
     emit(state.copyWith(
       status: DownloadStatus.canceled,
     ));
-
     FileDownloader().cancelTaskWithId(state.download.downloadTask!.taskId);
   }
 
@@ -131,6 +158,19 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
       status: DownloadStatus.completed,
       url: '',
       download: Download(),
+    ));
+    await Future.delayed(Duration(milliseconds: 10));
+    emit(state.copyWith(
+      status: DownloadStatus.initial,
+      url: '',
+      download: Download(),
+    ));
+  }
+
+  FutureOr<void> _onDownloadFailed(DownloadFailed event, Emitter<DownloaderState> emit) async {
+    emit(state.copyWith(
+      status: DownloadStatus.failed,
+      message: event.message,
     ));
     await Future.delayed(Duration(milliseconds: 10));
     emit(state.copyWith(

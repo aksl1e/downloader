@@ -14,6 +14,15 @@ final class DownloadLinkChanged extends DownloaderEvent {
   @override
   List<Object> get props => [url];
 }
+final class DownloadFolderChanged extends DownloaderEvent {
+  const DownloadFolderChanged(this.folderPath);
+
+  final String folderPath;
+
+  @override
+  List<Object> get props => [folderPath];
+}
+final class DownloadFolderSelectClicked extends DownloaderEvent {}
 
 final class DownloadStarted extends DownloaderEvent {}
 final class DownloadCompleted extends DownloaderEvent {}
@@ -31,3 +40,11 @@ final class DownloadPaused extends DownloaderEvent {}
 final class DownloadCancelSubmitted extends DownloaderEvent {}
 final class DownloadCanceled extends DownloaderEvent {}
 final class DownloadResumed extends DownloaderEvent {}
+final class DownloadFailed extends DownloaderEvent {
+  const DownloadFailed(this.message);
+
+  final String message;
+
+  @override
+  List<Object> get props => [message];
+}
