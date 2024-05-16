@@ -67,20 +67,22 @@ class DownloaderBloc extends Bloc<DownloaderEvent, DownloaderState> {
   }
 
   FutureOr<void> _onDownloadStarted(DownloadStarted event, Emitter<DownloaderState> emit) async {
-    print(state.url);
-    emit(state.copyWith(
-      status: DownloadStatus.downloading,
-      download: Download(
-        downloadTask: DownloadTask(
-          url: state.url,
-          directory: state.destFolder,
-          filename: basename(state.url),
-          updates: Updates.statusAndProgress,
-          allowPause: true,
+    try {
+      emit(state.copyWith(
+        status: DownloadStatus.downloading,
+        download: Download(
+          downloadTask: DownloadTask(
+            url: state.url,
+            directory: state.destFolder,
+            filename: basename(state.url),
+            updates: Updates.statusAndProgress,
+            allowPause: true,
+          ),
         ),
-      ),
-    ));
-
+      ));
+    } catch(e) {
+      add(DownloadFailed(e.toString()));
+    }
     await FileDownloader().enqueue(state.download.downloadTask!);
   }
 
